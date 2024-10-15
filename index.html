@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 30px; /* Increased padding for better spacing */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow */
+            max-width: 400px;
+            width: 100%;
+            margin: 20px; /* Added margin to avoid edge-to-edge display */
+        }
+        h2, h3 {
+            color: #007bff; /* Changed color for headings for better visibility */
+            margin: 15px 0;
+        }
+        input, button {
+            display: block;
+            width: calc(100% - 22px); /* Adjusted width to account for padding */
+            margin: 10px auto; /* Added margin for consistent spacing */
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box; /* Added box-sizing to include padding in width calculation */
+        }
+        button {
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            transition: background-color 0.3s; /* Added transition for button hover */
+        }
+        button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            background-color: #e0f7fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-weight: bold; /* Made results bold for emphasis */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Time Calculator</h2>
+        <div id="timeInputSection">
+            <input type="number" id="days" placeholder="Days" onkeydown="focusNext(event, 'hours')">
+            <input type="number" id="hours" placeholder="Hours" onkeydown="focusNext(event, 'minutes')">
+            <input type="number" id="minutes" placeholder="Minutes" onkeydown="focusNext(event, 'seconds')">
+            <input type="number" id="seconds" placeholder="Seconds" onkeydown="focusNext(event, 'addButton')">
+            <button id="addButton" onclick="addTime()">[+] Add</button>
+            <button id="subtractButton" onclick="subtractTime()">[-] Subtract</button>
+            <div class="result" id="resultDisplay">Result: 00:00:00</div>
+        </div>
+
+        <h3>Playback Speed Calculator</h3>
+        <div id="playbackSpeedSection">
+            <input type="number" id="playbackHours" placeholder="Hours">
+            <input type="number" id="playbackMinutes" placeholder="Minutes">
+            <input type="number" id="playbackSeconds" placeholder="Seconds">
+            <input type="number" step="0.1" id="playbackSpeed" placeholder="Playback Speed">
+            <button onclick="calculatePlayback()">Calculate</button>
+            <div class="result" id="calculatedTime">Calculated Time: 00:00:00</div>
+            <div class="result" id="totalTimeDisplay">Total Time: 00:00:00</div>
+            <div class="result" id="timeSavedDisplay">Time Saved: 00:00:00</div>
+        </div>
+    </div>
+
+    <script>
+        let totalSeconds = 0;
+
+        function addTime() {
+            modifyTime(1);
+        }
+
+        function subtractTime() {
+            modifyTime(-1);
+        }
+
+        function modifyTime(factor) {
+            const days = parseInt(document.getElementById("days").value) || 0;
+            const hours = parseInt(document.getElementById("hours").value) || 0;
+            const minutes = parseInt(document.getElementById("minutes").value) || 0;
+            const seconds = parseInt(document.getElementById("seconds").value) || 0;
+
+            totalSeconds += factor * ((days * 86400) + (hours * 3600) + (minutes * 60) + seconds);
+            updateResultDisplay();
+            clearInputFields();
+        }
+
+        function updateResultDisplay() {
+            const time = formatTime(totalSeconds);
+            document.getElementById("resultDisplay").innerText = `Result: ${time}`;
+            document.getElementById("playbackHours").value = Math.floor(totalSeconds / 3600);
+            document.getElementById("playbackMinutes").value = Math.floor((totalSeconds % 3600) / 60);
+            document.getElementById("playbackSeconds").value = totalSeconds % 60;
+        }
+
+        function clearInputFields() {
+            document.getElementById("days").value = "";
+            document.getElementById("hours").value = "";
+            document.getElementById("minutes").value = "";
+            document.getElementById("seconds").value = "";
+        }
+
+        function calculatePlayback() {
+            const hours = parseInt(document.getElementById("playbackHours").value) || 0;
+            const minutes = parseInt(document.getElementById("playbackMinutes").value) || 0;
+            const seconds = parseInt(document.getElementById("playbackSeconds").value) || 0;
+            const speed = parseFloat(document.getElementById("playbackSpeed").value) || 1;
+
+            const totalPlaybackSeconds = ((hours * 3600) + (minutes * 60) + seconds) / speed;
+            document.getElementById("calculatedTime").innerText = `Calculated Time: ${formatTime(totalPlaybackSeconds)}`;
+
+            const currentDate = new Date();
+            currentDate.setSeconds(currentDate.getSeconds() + totalPlaybackSeconds);
+            document.getElementById("totalTimeDisplay").innerText = `Total Time: ${formatDate(currentDate)}`;
+            document.getElementById("timeSavedDisplay").innerText = `Time Saved: ${formatTime((hours * 3600 + minutes * 60 + seconds) - totalPlaybackSeconds)}`;
+        }
+
+        function formatTime(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = Math.floor(totalSeconds % 60);
+            return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        }
+
+        function formatDate(date) {
+            const options = { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true };
+            return date.toLocaleString("en-US", options);
+        }
+
+        function focusNext(event, nextElementId) {
+            if (event.key === "Enter") {
+                document.getElementById(nextElementId).focus();
+            }
+        }
+    </script>
+</body>
+</html>
